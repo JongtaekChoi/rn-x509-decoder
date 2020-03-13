@@ -93,7 +93,7 @@ export class TLV {
   }
 }
 
-class Certificate extends TLV {
+export class Certificate extends TLV {
   constructor(tlv: TLV) {
     super(tlv);
     console.log(this.content)
@@ -130,7 +130,7 @@ class Certificate extends TLV {
     return this.content ? this.content[9] : null;
   }
 
-  toString(depth: number) {
+  toString(depth: number = 0) {
     let indent = '';
     for (let i = 0; i < depth; i += 1) {
       indent += ' ';
@@ -244,7 +244,7 @@ function buffer2HexString(buffer: Buffer): string {
   return array.substring(0, array.length - 1);
 }
 
-function decodeTLV(buffer: Buffer, start: number = 0, end: number = buffer.length): TLV[] {
+export function decodeTLV(buffer: Buffer, start: number = 0, end: number = buffer.length): TLV[] {
   let i = start;
   const der: TLV[] = [];
   while (i < end) {
