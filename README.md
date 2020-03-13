@@ -1,4 +1,4 @@
-# rn-x509der-parser
+# rn-x509-decoder
 Parsing X509 DER from base64 string
 
 ## Install

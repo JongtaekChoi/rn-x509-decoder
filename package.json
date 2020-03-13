@@ -1,5 +1,5 @@
 {
-  "name": "rn-x509der-parser",
+  "name": "rn-x509-decoder",
   "version": "0.1.0",
   "description": "parsing x509 (der) from base64 string ",
   "main": "x509.ts",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jongtaekchoi/rn-x509der-parser.git"
+    "url": "git+https://github.com/jongtaekchoi/rn-x509-decoder.git"
   },
   "keywords": [
     "react-native",
@@ -17,9 +17,9 @@
   "author": "Jongteak Choi <lastchoice86@naver.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/jongtaekchoi/rn-x509der-parser/issues"
+    "url": "https://github.com/jongtaekchoi/rn-x509-decoder/issues"
   },
-  "homepage": "https://github.com/jongtaekchoi/rn-x509der-parser#readme",
+  "homepage": "https://github.com/jongtaekchoi/rn-x509-decoder#readme",
   "dependencies": {
     "buffer": "^5.5.0",
     "utf-8": "^2.0.0"
