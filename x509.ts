@@ -71,6 +71,10 @@ export class TLV {
   contentLength?: ContentLength;
   content?: string | boolean | TLV[];
 
+  get tag() {
+    return this.identifier.tag;
+  }
+
   constructor({ buffer, identifier, content, contentLength }: TLV) {
     this.buffer = buffer;
     this.identifier = identifier;
@@ -158,6 +162,30 @@ export default class X509DERSpec extends TLV {
     return this.content ? this.content[2] : null;
   }
 
+  get issuerName(): TLV | null {
+    const issuerCommonName = findTLVByOID(this.issuer, '55 04 03');
+    if (issuerCommonName != null) {
+      if (Array.isArray(issuerCommonName.content)) {
+        return issuerCommonName.content.find(t => t.tag != TAG.OID);
+      }
+    }
+    return null;
+  }
+
+  get subjectName(): TLV | null {
+    const subjectCommonName = findTLVByOID(this.subject, '55 04 03');
+    if (subjectCommonName != null) {
+      if (Array.isArray(subjectCommonName.content)) {
+        return subjectCommonName.content.find(t => t.tag != TAG.OID);
+      }
+    }
+    return null;
+  }
+
+  get bufferReprestation() {
+    return buffer2HexString(this.buffer);
+  }
+
   constructor(der: string) {
     const buffer = new Buffer(der, 'base64');
     const tlvs = decodeTLV(buffer);
@@ -172,6 +200,20 @@ Certificate Signature Algorithm:${this.signatureAlgorithm?.toString(1, false)}
 Certificate Signature:${this.signature?.toString(1, false)}
 `
   }
+}
+
+function findTLVByOID(tlv: TLV, OID: string): TLV | null {
+  let target;
+  if (Array.isArray(tlv.content)) {
+    if (tlv.content.findIndex(child => (child.tag === TAG.OID) && child.content === OID) >= 0) {
+      return tlv;
+    } else {
+      tlv.content.forEach(child => {
+        target = findTLVByOID(child, OID);
+      })
+    }
+  }
+  return target;
 }
 function getIdentifier(buffer: Buffer, index: number): Identifier {
   const value = buffer.readUInt8(index);
