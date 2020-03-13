@@ -215,7 +215,8 @@ export function decodeTLV(buffer: Buffer, start: number = 0, end: number = buffe
       if (id.tag === TAG.UTCTime) {
         const yyyymmdd = `20${content.substring(0, 2)}-${content.substring(2, 4)}-${content.substring(4, 6)}`;
         const hhMMss = `${content.substring(6, 8)}:${content.substring(8, 10)}:${content.substring(10, 12)}`;
-        content = `${yyyymmdd} ${hhMMss}`;
+        const UTC = content[content.length - 1] === 'z' ? ' UTC' : '';
+        content = `${yyyymmdd} ${hhMMss}${UTC}`;
       }
     } else if (id.tag === TAG.UTF8String) {
       content = utf8.getStringFromBytes(contentBuffer);
