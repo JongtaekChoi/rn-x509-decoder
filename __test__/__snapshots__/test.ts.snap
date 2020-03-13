@@ -1,8 +1,7 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`Parsing base64string can parse base64string 1`] = `
-"
-Certificate:
+"Certificate:
  Version 0
  Serial Number 0
  Signature undefined
