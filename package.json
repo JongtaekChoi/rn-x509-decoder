@@ -1,0 +1,34 @@
+{
+  "name": "rn-x509der-parser",
+  "version": "0.1.0",
+  "description": "parsing x509 (der) from base64 string ",
+  "main": "x509.ts",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jongtaekchoi/rn-x509der-parser.git"
+  },
+  "keywords": [
+    "react-native",
+    "x509"
+  ],
+  "author": "Jongteak Choi <lastchoice86@naver.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/jongtaekchoi/rn-x509der-parser/issues"
+  },
+  "homepage": "https://github.com/jongtaekchoi/rn-x509der-parser#readme",
+  "dependencies": {
+    "buffer": "^5.5.0",
+    "utf-8": "^2.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.2",
+    "@babel/runtime": "^7.6.2",
+    "babel-jest": "^24.9.0",
+    "eslint": "^6.5.1",
+    "jest": "^24.9.0"
+  }
+}
