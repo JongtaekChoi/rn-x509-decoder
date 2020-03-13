@@ -3,7 +3,7 @@ Parsing X509 DER from base64 string
 
 ## Install
 ``` 
-yarn add rn-x509der-parser 
+yarn add rn-x509-decoder 
 ```
 
 ## Usage
