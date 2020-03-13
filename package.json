@@ -1,6 +1,6 @@
 {
   "name": "rn-x509-decoder",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "parsing x509 (der) from base64 string ",
   "main": "x509.ts",
   "scripts": {
