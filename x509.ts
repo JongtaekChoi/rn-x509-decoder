@@ -96,7 +96,6 @@ export class TLV {
 export class Certificate extends TLV {
   constructor(tlv: TLV) {
     super(tlv);
-    console.log(this.content)
   }
 
   get version() {
@@ -136,16 +135,16 @@ export class Certificate extends TLV {
       indent += ' ';
     }
     return `
-${indent}Version${this.version?.toString(depth + 1, false)}
-${indent}Serial Number${this.serialNumber?.toString(depth + 1, false)}
-${indent}Signature${this.signature?.toString(depth + 1, false)}
-${indent}Issuer${this.issuer?.toString(depth + 1, false)}
-${indent}Validity${this.validity?.toString(depth + 1, false)}
-${indent}Subject${this.subject?.toString(depth + 1, false)}
-${indent}Subject Public Key Info${this.subjectPulicKeyInfo?.toString(depth + 1, false)}
-${indent}Issuer Unique Identifier${this.issuerUID?.toString(depth + 1, false)}
-${indent}Subject Unique Identifier${this.subjectUID?.toString(depth + 1, false)}
-${indent}Extensions${this.extensions?.toString(depth + 1, false)}
+${indent}Version ${this.version?.toString(depth + 1, false)}
+${indent}Serial Number ${this.serialNumber?.toString(depth + 1, false)}
+${indent}Signature ${this.signature?.toString(depth + 1, false)}
+${indent}Issuer ${this.issuer?.toString(depth + 1, false)}
+${indent}Validity ${this.validity?.toString(depth + 1, false)}
+${indent}Subject ${this.subject?.toString(depth + 1, false)}
+${indent}Subject Public Key Info ${this.subjectPulicKeyInfo?.toString(depth + 1, false)}
+${indent}Issuer Unique Identifier ${this.issuerUID?.toString(depth + 1, false)}
+${indent}Subject Unique Identifier ${this.subjectUID?.toString(depth + 1, false)}
+${indent}Extensions ${this.extensions?.toString(depth + 1, false)}
 `
   }
 }
@@ -284,7 +283,7 @@ export function decodeTLV(buffer: Buffer, start: number = 0, end: number = buffe
       contentLength: contentLength,
       content,
     })
-    console.log({ content })
+
     der.push(structure)
     i += contentLength.length;
   }

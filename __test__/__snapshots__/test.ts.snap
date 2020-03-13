@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Parsing base64string can parse base64string 1`] = `
+"
+Certificate:
+ Version 0
+ Serial Number 0
+ Signature undefined
+ Issuer undefined
+ Validity undefined
+ Subject undefined
+ Subject Public Key Info undefined
+ Issuer Unique Identifier undefined
+ Subject Unique Identifier undefined
+ Extensions undefined
+
+Certificate Signature Algorithm:: 00 BE 51 AB 3A 83 13 04 2C 3A 00 E0 FC 31 89 08 95 37 D5 DD 84 32 29 BF 27 98 D9 77 1E 4C 51 5D 12 58 93 D9 52 51 33 E9 7E A0 E1 2A 3D 4A 2E 1B 45 A6 FF 30 E2 37 53 44 EE F5 BD 6E 31 13 F2 7D 41 40 62 F9 BF 19 12 B3 69 78 AF D8 CD 8B 19 82 93 51 A7 AD 52 41 4D 98 4D 69 11 44 FA CE 6A 2A 45 37 EB B3 34 41 FB 6A 71 9E AF 18 33 3C A0 9F BB F5 7A 90 5E 3A 28 EC 37 FF 54 B7 35 3B AF 3F 14 A7 13 E6 45 67 03 61 96 6C 52 4D 98 B9 C4 73 6F 12 A3 E8 73 CA 41 B7 84 4F BC 34 0A 86 87 D9 64 4D 3E BD 13 64 A6 6B C1 B9 9F CB 98 DA 31 EA 97 6D 9B CD 75 09 CC C1 1E 08 42 BA AD 2F 87 93 D6 56 E2 FE 18 E0 B1 5A 87 FA 27 BD 15 DF BA CA B5 C9 3D 58 E0 A2 81 0D DF AA 49 6C F5 98 C9 6A BD DC E4 C1 2C 28 87 D1 41 B6 8A F0 72 7B 4C 4D F6 E4 F3 4E A5 17 58 7B 43 C7 73 C7 35 42 27 08 E7
+Certificate Signature:: 01 00 01
+"
+`;
