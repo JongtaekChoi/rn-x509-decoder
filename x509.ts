@@ -1,3 +1,7 @@
+/* eslint-disable no-buffer-constructor */
+/* eslint-disable arrow-parens */
+/* eslint-disable no-bitwise */
+/* eslint-disable camelcase */
 import { Buffer } from 'buffer';
 import utf8 from 'utf-8';
 
@@ -67,15 +71,20 @@ export interface ContentLength {
 
 export class TLV {
   buffer: Buffer;
+
   identifier: Identifier;
-  contentLength?: ContentLength;
-  content?: string | boolean | TLV[];
+
+  contentLength: ContentLength;
+
+  content: string | boolean | TLV[] | null;
 
   get tag() {
     return this.identifier.tag;
   }
 
-  constructor({ buffer, identifier, content, contentLength }: TLV) {
+  constructor({
+    buffer, identifier, content, contentLength,
+  }) {
     this.buffer = buffer;
     this.identifier = identifier;
     this.content = content;
@@ -87,48 +96,181 @@ export class TLV {
     for (let i = 0; i < depth; i += 1) {
       indent += ' ';
     }
-    const content = this.content != undefined
+    const content = this.content !== undefined
       ? Array.isArray(this.content)
-        ? '\n' + indent + this.content.map(d => d.toString(depth + 1)).reduce((p, n) => p + '\n' + indent + n)
+        ? `\n${indent}${this.content.map(d => d.toString(depth + 1)).reduce((p, n) => `${p}\n${indent}${n}`)}`
         : this.content
       : null;
-    const tag = includeTag ? TAG[this.identifier.tag] + ': ' : ''
+    const tag = includeTag ? `${TAG[this.identifier.tag]}: ` : '';
     return `${tag}: ${content}`;
   }
 }
 
-export class Certificate extends TLV {
-  constructor(tlv: TLV) {
-    super(tlv);
+function getIdentifier(buffer: Buffer, index: number): Identifier {
+  const value = buffer.readUInt8(index);
+  const c: IdentifierClass = value >> 6;
+  const pc: IdentifierPC = (value >> 5) & 1;
+  let tag: number = value & 31;
+  let octets = 1;
+  if (tag === 31) {
+    octets = 2;
+    tag = buffer.readUInt8(index + 1) & 63;
   }
+  const id = {
+    class: c,
+    pc,
+    tag,
+    octets,
+  };
+  return id;
+}
 
+function getContentLength(buffer: Buffer, index: number): ContentLength {
+  const value = buffer.readUInt8(index);
+  if (value < 128) {
+    return {
+      length: value,
+      octets: 1,
+    };
+  }
+  const octets = value & 127;
+  if (octets === 0) {
+    return {
+      indefinite: true,
+      octets: 1,
+    };
+  }
+  let contentLength = 0;
+  for (let i = 0; i < octets; i += 1) {
+    const n = buffer.readUInt8(index + i + 1);
+    contentLength = (contentLength * 256 + n);
+  }
+  return {
+    length: contentLength,
+    octets: octets + 1,
+  };
+}
+
+function toHex(n: number): string {
+  const value = `${n & 15}`;
+  switch (value) {
+    case '15': return 'F';
+    case '14': return 'E';
+    case '13': return 'D';
+    case '12': return 'C';
+    case '11': return 'B';
+    case '10': return 'A';
+    default:
+      return value;
+  }
+}
+
+function buffer2HexString(buffer: Buffer): string {
+  let array = '';
+  buffer.forEach(b => {
+    array += `${toHex(b >> 4) + toHex(b)} `;
+  });
+  return array.substring(0, array.length - 1);
+}
+
+function findTLVByOID(tlv: TLV, OID: string): TLV | null {
+  let target;
+  if (Array.isArray(tlv.content)) {
+    if (tlv.content.findIndex(child => (child.tag === TAG.OID) && child.content === OID) >= 0) {
+      return tlv;
+    }
+    tlv.content.forEach((child) => {
+      target = findTLVByOID(child, OID);
+    });
+  }
+  return target;
+}
+
+
+export function decodeTLV(buffer: Buffer, start: number = 0, end: number = buffer.length): TLV[] {
+  let i = start;
+  const der: TLV[] = [];
+  while (i < end) {
+    const id = getIdentifier(buffer, i);
+    i += id.octets;
+
+    let contentLength: ContentLength = { length: 1, octets: 0 };
+    if (id.tag !== 1) {
+      contentLength = getContentLength(buffer, i);
+    }
+    i += contentLength.octets;
+    if (i + contentLength.length > buffer.length) {
+      throw new Error('last content index cannot bigger than buffer length');
+    }
+    const contentBuffer = new Buffer(buffer.slice(i, i + contentLength.length));
+    let content;
+    if (id.pc === IdentifierPC.Constructed) {
+      try {
+        content = decodeTLV(buffer, i, i + contentLength.length);
+      } catch (error) {
+        content = `ERROR ${error.message}`;
+      }
+    } else if ([TAG.IA5String, TAG.PrintableString, TAG.UTCTime].indexOf(id.tag) >= 0) {
+      content = contentBuffer.toString();
+    } else if (id.tag === TAG.UTF8String) {
+      content = utf8.getStringFromBytes(contentBuffer);
+    } else if (id.tag === TAG.BOOLEAN) {
+      content = !!contentBuffer[0];
+    } else {
+      content = buffer2HexString(contentBuffer);
+    }
+
+    const structure = new TLV({
+      buffer: new Buffer(buffer.slice(i, i + contentLength.length)),
+      identifier: id,
+      contentLength,
+      content,
+    });
+
+    der.push(structure);
+    i += contentLength.length;
+  }
+  // console.log(der);
+  return der;
+}
+
+export class Certificate extends TLV {
   get version() {
     return this.content[0];
   }
+
   get serialNumber() {
     return this.content[1];
   }
+
   get signature() {
     return this.content ? this.content[2] : null;
   }
+
   get issuer() {
     return this.content ? this.content[3] : null;
   }
+
   get validity() {
     return this.content ? this.content[4] : null;
   }
+
   get subject() {
     return this.content ? this.content[5] : null;
   }
+
   get subjectPulicKeyInfo() {
     return this.content ? this.content[6] : null;
   }
+
   get issuerUID() {
     return this.content ? this.content[7] : null;
   }
+
   get subjectUID() {
     return this.content ? this.content[8] : null;
   }
+
   get extensions() {
     return this.content ? this.content[9] : null;
   }
@@ -149,34 +291,36 @@ ${indent}Subject Public Key Info ${this.subjectPulicKeyInfo?.toString(depth + 1,
 ${indent}Issuer Unique Identifier ${this.issuerUID?.toString(depth + 1, false)}
 ${indent}Subject Unique Identifier ${this.subjectUID?.toString(depth + 1, false)}
 ${indent}Extensions ${this.extensions?.toString(depth + 1, false)}
-`
+`;
   }
 }
 
 export default class X509DERSpec extends TLV {
   certificate: Certificate;
+
   get signatureAlgorithm(): TLV {
     return this.content ? this.content[1] : null;
   }
+
   get signature(): TLV {
     return this.content ? this.content[2] : null;
   }
 
   get issuerName(): TLV | null {
-    const issuerCommonName = findTLVByOID(this.issuer, '55 04 03');
+    const issuerCommonName = findTLVByOID(this.certificate.issuer, '55 04 03');
     if (issuerCommonName != null) {
       if (Array.isArray(issuerCommonName.content)) {
-        return issuerCommonName.content.find(t => t.tag != TAG.OID);
+        return issuerCommonName.content.find(t => t.tag !== TAG.OID);
       }
     }
     return null;
   }
 
   get subjectName(): TLV | null {
-    const subjectCommonName = findTLVByOID(this.subject, '55 04 03');
+    const subjectCommonName = findTLVByOID(this.certificate.subject, '55 04 03');
     if (subjectCommonName != null) {
       if (Array.isArray(subjectCommonName.content)) {
-        return subjectCommonName.content.find(t => t.tag != TAG.OID);
+        return subjectCommonName.content.find(t => t.tag !== TAG.OID);
       }
     }
     return null;
@@ -189,146 +333,14 @@ export default class X509DERSpec extends TLV {
   constructor(der: string) {
     const buffer = new Buffer(der, 'base64');
     const tlvs = decodeTLV(buffer);
-    super(tlvs[0])
+    super(tlvs[0]);
     this.certificate = new Certificate(this.content[0]);
   }
 
   toString() {
-    return `
-Certificate:${this.certificate?.toString(1)}
+    return `Certificate:${this.certificate?.toString(1)}
 Certificate Signature Algorithm:${this.signatureAlgorithm?.toString(1, false)}
 Certificate Signature:${this.signature?.toString(1, false)}
-`
+`;
   }
-}
-
-function findTLVByOID(tlv: TLV, OID: string): TLV | null {
-  let target;
-  if (Array.isArray(tlv.content)) {
-    if (tlv.content.findIndex(child => (child.tag === TAG.OID) && child.content === OID) >= 0) {
-      return tlv;
-    } else {
-      tlv.content.forEach(child => {
-        target = findTLVByOID(child, OID);
-      })
-    }
-  }
-  return target;
-}
-function getIdentifier(buffer: Buffer, index: number): Identifier {
-  const value = buffer.readUInt8(index);
-  const c: IdentifierClass = value >> 6;
-  const pc: IdentifierPC = value >> 5 & 1;
-  let tag: number = value & 31;
-  let octets = 1;
-  if (tag === 31) {
-    octets = 2;
-    tag = buffer.readUInt8(index + 1) & 63;
-  }
-  const id = {
-    class: c,
-    pc,
-    tag,
-    octets
-  }
-  return id
-}
-
-function getContentLength(buffer: Buffer, index: number): ContentLength {
-  const value = buffer.readUInt8(index);
-  if (value < 128) {
-    return {
-      length: value,
-      octets: 1
-    }
-  } else {
-    const octets = value & 127;
-    if (octets === 0) {
-      return {
-        indefinite: true,
-        octets: 1,
-      }
-    } else {
-      let contentLength = 0;
-      for (let i = 0; i < octets; i += 1) {
-        const n = buffer.readUInt8(index + i + 1);
-        contentLength = (contentLength * 256 + n);
-      }
-      return {
-        length: contentLength,
-        octets: octets + 1,
-      }
-    }
-  }
-
-}
-
-function toHex(n: number): string {
-  const value = (n & 15) + '';
-  switch (value) {
-    case '15': return 'F';
-    case '14': return 'E';
-    case '13': return 'D';
-    case '12': return 'C';
-    case '11': return 'B';
-    case '10': return 'A';
-    default:
-      return value;
-  }
-}
-
-function buffer2HexString(buffer: Buffer): string {
-  let array = "";
-  buffer.forEach(b => {
-    array += toHex(b >> 4) + toHex(b) + ' ';
-  })
-  return array.substring(0, array.length - 1);
-}
-
-export function decodeTLV(buffer: Buffer, start: number = 0, end: number = buffer.length): TLV[] {
-  let i = start;
-  const der: TLV[] = [];
-  while (i < end) {
-    let id = getIdentifier(buffer, i);
-    i += id.octets;
-
-    let contentLength: ContentLength = { length: 1, octets: 0 };
-    if (id.tag !== 1) {
-      contentLength = getContentLength(buffer, i);
-    }
-    i += contentLength.octets;
-    if (i + contentLength.length > buffer.length) {
-      throw new Error('last content index cannot bigger than buffer length');
-    }
-    const contentBuffer = new Buffer(buffer.slice(i, i + contentLength.length))
-    let content;
-    if (id.pc === IdentifierPC.Constructed) {
-      try {
-        content = decodeTLV(buffer, i, i + contentLength.length);
-      } catch (error) {
-        console.error(error);
-        content = "ERROR " + error.message;
-      }
-    } else if ([TAG.IA5String, TAG.PrintableString, TAG.UTCTime].indexOf(id.tag) >= 0) {
-      content = contentBuffer.toString();
-    } else if (id.tag === TAG.UTF8String) {
-      content = utf8.getStringFromBytes(contentBuffer);
-    } else if (id.tag === TAG.BOOLEAN) {
-      content = !!contentBuffer[0]
-    } else {
-      content = buffer2HexString(contentBuffer);
-    }
-
-    const structure = new TLV({
-      buffer: new Buffer(buffer.slice(i, i + contentLength.length)),
-      identifier: id,
-      contentLength: contentLength,
-      content,
-    })
-
-    der.push(structure)
-    i += contentLength.length;
-  }
-  // console.log(der);
-  return der;
 }
